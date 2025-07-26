@@ -1,4 +1,3 @@
-# -// index.js
 const express = require('express');
 const line = require('@line/bot-sdk');
 
@@ -10,13 +9,20 @@ const config = {
 const app = express();
 const client = new line.Client(config);
 
+// 接收 webhook 的路由
 app.post('/webhook', line.middleware(config), (req, res) => {
   Promise
     .all(req.body.events.map(handleEvent))
-    .then((result) => res.json(result));
+    .then((result) => res.json(result))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).end();
+    });
 });
 
+// 處理事件的函式
 function handleEvent(event) {
+  // 只處理文字訊息
   if (event.type !== 'message' || event.message.type !== 'text') {
     return Promise.resolve(null);
   }
@@ -26,10 +32,13 @@ function handleEvent(event) {
 
   if (messageText === '打卡') {
     const now = new Date().toLocaleString();
-    // 👉 可在這裡寫入資料庫
+    const replyText = `✅ 打卡成功！\n時間：${now}`;
+
+    // 🔧 這裡可以加上寫入資料庫的邏輯
+
     return client.replyMessage(event.replyToken, {
       type: 'text',
-      text: `✅ 打卡成功！\n時間：${now}`,
+      text: replyText,
     });
   } else {
     return client.replyMessage(event.replyToken, {
@@ -39,6 +48,7 @@ function handleEvent(event) {
   }
 }
 
+// 啟動伺服器
 app.listen(process.env.PORT || 3000, () => {
   console.log('伺服器已啟動');
 });
